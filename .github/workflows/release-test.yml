@@ -7,7 +7,7 @@ name: Test Creating Release Draft
 on:
   push:
     branches:
-    - release/freebsd
+    - release/musl-with-docker
     tags:
     - 'v*'
 
@@ -46,7 +46,7 @@ jobs:
         rustflags: ''
 
     - name: Setup Nushell
-      uses: hustcer/setup-nu@v3.13
+      uses: hustcer/setup-nu@v3
       with:
         version: 0.98.0
 
