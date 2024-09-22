@@ -79,6 +79,20 @@ if $os in ['macos-latest'] or $USE_UBUNTU {
             $env.CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_LINKER = 'riscv64-linux-gnu-gcc'
             cargo-build-nu
         }
+        'x86_64-unknown-freebsd' => {
+            # docker container run --rm
+            # --volume ${{ github.workspace }}:/src
+            # --user $(id --user):$(id --group)
+            # --env OPENSSL_DIR=/usr/local/freebsd-13.2/usr
+            # unixgeek2/rust-x86_64-freebsd:latest build --release --target x86_64-unknown-freebsd
+        }
+        'loongarch64-unknown-linux-gnu' => {
+            aria2c https://github.com/sunhaiyong1978/CLFS-for-LoongArch/releases/download/8.1/CLFS-loongarch64-8.1.1-x86_64-cross-tools-gcc-libc.tar.xz
+            tar xf CLFS-loongarch64-8.1.1-x86_64-cross-tools-gcc-libc.tar.xz
+            $env.PATH = ($env.PATH | split row (char esep) | prepend $'($env.PWD)/cross-tools/bin')
+            $env.CARGO_TARGET_LOONGARCH64_UNKNOWN_LINUX_GNU_LINKER = 'loongarch64-unknown-linux-gnu-gcc'
+            cargo-build-nu
+        }
         'armv7-unknown-linux-gnueabihf' => {
             sudo apt-get install pkg-config gcc-arm-linux-gnueabihf -y
             $env.CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER = 'arm-linux-gnueabihf-gcc'
@@ -214,7 +228,7 @@ if $os in ['macos-latest'] or $USE_UBUNTU {
 }
 
 def 'cargo-build-nu' [] {
-    if $os == 'windows-latest' {
+    if $os == 'windows-latest' or $target == 'x86_64-unknown-freebsd' {
         cargo build --release --all --target $target
     } else {
         cargo build --release --all --target $target --features=static-link-openssl
