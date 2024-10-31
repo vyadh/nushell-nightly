@@ -1,14 +1,14 @@
 name: Build Nushell Release Images
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - docker
-  schedule:
-    - cron: '15 2 * * 2,5' # Run at 02:15 AM UTC for Tuesday and Friday
   workflow_dispatch:
+#  push:
+#    branches:
+#      - main
+#    paths:
+#      - docker
+#  schedule:
+#    - cron: '15 2 * * 2,5' # Run at 02:15 AM UTC for Tuesday and Friday
 
 jobs:
   build-and-push-Nu:
@@ -57,6 +57,28 @@ jobs:
           $'NU_VERSION=($tagName)(char nl)' o>> $env.GITHUB_ENV
           $'BUILD_DATE=(date now | format date %Y-%m-%dT%H:%M:%SZ)(char nl)' o>> $env.GITHUB_ENV
 
+      - name: Build Debian Test Image
+        uses: docker/build-push-action@v6
+        if: ${{ matrix.base == 'debian' }}
+        env:
+          DOCKER_BUILD_SUMMARY: false
+        with:
+          push: false
+          load: true
+          context: ./docker
+          file: ./docker/debian.Dockerfile
+          tags: nushell-debian-test-image
+
+      - name: Test Debian Image
+        if: ${{ matrix.base == 'debian' }}
+        run: |
+          echo "## Debian Container Test Results" >> $GITHUB_STEP_SUMMARY
+          docker run --rm \
+            -v "$(pwd)/docker:/work" \
+            --env GITHUB_ACTIONS=${{ env.GITHUB_ACTIONS }} \
+            nushell-debian-test-image -c /work/test_docker.nu \
+            >> $GITHUB_STEP_SUMMARY
+
       - name: Build and Push Debian Image
         uses: docker/build-push-action@v6
         if: ${{ matrix.base == 'debian' }}
@@ -72,8 +94,30 @@ jobs:
             BUILD_DATE=${{ env.BUILD_DATE }}
             NU_VERSION=${{ env.NU_VERSION }}
           tags: |
-            ghcr.io/nushell/nushell:latest-bookworm
-            ghcr.io/nushell/nushell:${{ env.NU_VERSION }}-bookworm
+            ghcr.io/vyadh/nushell:latest-bookworm
+            ghcr.io/vyadh/nushell:${{ env.NU_VERSION }}-bookworm
+
+      - name: Build Alpine Test Image
+        uses: docker/build-push-action@v6
+        if: ${{ matrix.base == 'alpine' }}
+        env:
+          DOCKER_BUILD_SUMMARY: false
+        with:
+          push: false
+          load: true
+          context: ./docker
+          file: ./docker/Dockerfile
+          tags: nushell-alpine-test-image
+
+      - name: Test Alpine Image
+        if: ${{ matrix.base == 'alpine' }}
+        run: |
+          echo "## Alpine Container Test Results" >> $GITHUB_STEP_SUMMARY
+          docker run --rm \
+            -v "$(pwd)/docker:/work" \
+            --env GITHUB_ACTIONS=${{ env.GITHUB_ACTIONS }} \
+            nushell-alpine-test-image -c /work/test_docker.nu \
+            >> $GITHUB_STEP_SUMMARY
 
       - name: Build and Push Alpine Image
         uses: docker/build-push-action@v6
@@ -89,10 +133,10 @@ jobs:
             BUILD_DATE=${{ env.BUILD_DATE }}
             NU_VERSION=${{ env.NU_VERSION }}
           tags: |
-            ghcr.io/nushell/nushell:latest
-            ghcr.io/nushell/nushell:latest-alpine
-            ghcr.io/nushell/nushell:${{ env.NU_VERSION }}
-            ghcr.io/nushell/nushell:${{ env.NU_VERSION }}-alpine
+            ghcr.io/vyadh/nushell:latest
+            ghcr.io/vyadh/nushell:latest-alpine
+            ghcr.io/vyadh/nushell:${{ env.NU_VERSION }}
+            ghcr.io/vyadh/nushell:${{ env.NU_VERSION }}-alpine
 
   cleanup:
     runs-on: ubuntu-latest
@@ -107,6 +151,6 @@ jobs:
           owner_type: user
           untagged_only: true
           package_name: 'nushell'
-          repository_owner: 'nushell'
-          repository: 'nushell/nushell'
+          repository_owner: 'vyadh'
+          repository: 'vyadh/nushell'
           token: ${{ secrets.GITHUB_TOKEN }}

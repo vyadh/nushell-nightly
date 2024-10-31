@@ -1,12 +1,6 @@
 name: Pre Release
 
 on:
-  push:
-    branches:
-      - nightly0    # Just for test purpose only with the nightly repo
-  # This schedule will run only from the default branch
-  schedule:
-    - cron: '30 1 * * *' # run at 00:15 AM UTC
   workflow_dispatch:
     inputs:
       force:
@@ -14,6 +8,12 @@ on:
         default: false
         required: false
         description: 'Force Run'
+#  push:
+#    branches:
+#      - nightly0    # Just for test purpose only with the nightly repo
+  # This schedule will run only from the default branch
+#  schedule:
+#    - cron: '30 1 * * *' # run at 00:15 AM UTC
 
 defaults:
   run:
